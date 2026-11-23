@@ -9,6 +9,8 @@
 
 import Foundation
 
-// Re-export Foundation types commonly used with SwiftUI
-public typealias CGFloat = Double
-// CGPoint, CGSize, CGRect are from Foundation on all platforms
+// CGPoint, CGSize, CGRect, CGFloat are from Foundation on all platforms
+
+// Standard styles are defined in their respective view modules (List, App, Button, Picker)
+
+

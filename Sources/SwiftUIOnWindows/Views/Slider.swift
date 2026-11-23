@@ -14,5 +14,11 @@ public struct Slider: View {
         self.value = value; self.bounds = bounds; self.step = step
     }
 
+    public init<Label: View>(value: Binding<Double>, in bounds: ClosedRange<Double> = 0...1,
+                             step: Double? = nil,
+                             @ViewBuilder label: () -> Label) {
+        self.value = value; self.bounds = bounds; self.step = step
+    }
+
     public var body: Never { fatalError("Slider is a leaf view") }
 }

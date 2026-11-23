@@ -8,6 +8,10 @@ let package = Package(
             name: "SwiftUIOnWindows",
             targets: ["SwiftUIOnWindows"]
         ),
+        .library(
+            name: "SwiftUI",
+            targets: ["SwiftUI"]
+        ),
         .executable(
             name: "SwiftUIDemo",
             targets: ["SwiftUIDemo"]
@@ -21,6 +25,11 @@ let package = Package(
             swiftSettings: [
                 .define("SWIFTUIONWINDOWS")
             ]
+        ),
+        .target(
+            name: "SwiftUI",
+            dependencies: ["SwiftUIOnWindows"],
+            path: "Sources/SwiftUI"
         ),
         .executableTarget(
             name: "SwiftUIDemo",

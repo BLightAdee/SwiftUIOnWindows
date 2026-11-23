@@ -167,47 +167,53 @@ struct ContentView: View {
 
 ### Prerequisites
 
-1. **Swift for Windows** — Install via winget:
-   ```powershell
-   winget install Swift.Toolchain
-   ```
+1. **Visual Studio 2022 Build Tools** with **"Desktop development with C++"** workload (provides MSVC `link.exe` and Windows 10/11 SDK).
+2. **Swift 6.0+ for Windows** (installed via official Windows installer or `winget install Swift.Toolchain`).
 
-2. **Git** — Installed automatically as a Swift dependency.
+### ⚡ One-Click Build & Run
 
-### Build & Run
+Simply double-click **`build_and_run.bat`** (or execute `build_and_run.ps1` in PowerShell):
 
 ```powershell
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/SwiftUIOnWindows.git
-cd SwiftUIOnWindows
-
-# Build
-swift build
-
-# Run the demo
-swift run SwiftUIDemo
+.\build_and_run.ps1
 ```
 
-### Use in Your Project
+The script automatically:
+1. Detects and initializes the Visual Studio C++ Developer Environment (`Launch-VsDevShell.ps1`).
+2. Configures Swift toolchain binaries, runtimes, and `SDKROOT`.
+3. Detects if running on a mapped network share (e.g. `Z:\`) and transparently stages to local storage to avoid Swift/LLVM network working directory hangs.
+4. Compiles the executable and copies it directly to `bin\SwiftUIDemo.exe`.
+5. Launches the native Win32 window.
 
-Add SwiftUIOnWindows as a dependency in your `Package.swift`:
+### 📚 Extensive Documentation
 
+For comprehensive technical guides, root-cause troubleshooting (network UNC silent hangs, missing DLLs, `.build` layout), and step-by-step instructions for porting existing SwiftUI apps, see **[DOCUMENTATION.md](DOCUMENTATION.md)**.
+
+### 📦 Using in Existing SwiftUI Apps
+
+You can drop this compatibility layer directly into any existing macOS/iOS SwiftUI project:
+
+In your app's `Package.swift`:
 ```swift
 dependencies: [
-    .package(url: "https://github.com/YOUR_USERNAME/SwiftUIOnWindows.git", from: "1.0.0")
+    .package(path: "../swiftOnWindows")
+],
+targets: [
+    .executableTarget(
+        name: "MyApp",
+        dependencies: [
+            .product(name: "SwiftUI", package: "swiftOnWindows")
+        ]
+    )
 ]
 ```
 
-Then import it:
+> **Zero Source Changes Required**: Because `SwiftUIOnWindows` exports a `SwiftUI` umbrella target, your existing code uses standard `import SwiftUI` without altering any source files!
 
-```swift
-import SwiftUIOnWindows
+### 🧪 Verified Against Real-World macOS App: `SwiftListak`
 
-struct MyView: View {
-    var body: some View {
-        Text("Hello from Windows!")
-    }
-}
+This compatibility layer was tested against [`SwiftListak`](SwiftListak/) — a comprehensive macOS educational app visualizing dynamic C++ Linked Lists with Bezier curves, interactive syntax highlighters, memory heap simulators, autoplay control panels, and quiz engines.
+Run `SwiftListak\build_and_run.bat` to build and launch `SwiftListak.exe` directly on Windows!
 ```
 
 ## 🔧 How It Works

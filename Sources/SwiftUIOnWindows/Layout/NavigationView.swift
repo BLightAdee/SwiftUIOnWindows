@@ -51,6 +51,13 @@ extension NavigationLink where Label == Text {
     }
 }
 
+extension NavigationLink where Destination == EmptyView {
+    public init<P: Hashable>(value: P?, @ViewBuilder label: () -> Label) {
+        self.destination = EmptyView()
+        self.label = label()
+    }
+}
+
 // MARK: - TabView
 
 public struct TabView<Content: View>: View {

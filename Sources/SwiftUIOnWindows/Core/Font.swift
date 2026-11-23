@@ -49,6 +49,12 @@ public struct Font: Equatable, Sendable {
         var copy = self; copy.weight = .bold; return copy
     }
 
+    public func monospaced() -> Font {
+        var copy = self
+        copy.design = .monospaced
+        return copy
+    }
+
     public func monospacedDigit() -> Font { return self }
 
     public enum Weight: Int, Equatable, Sendable {

@@ -23,6 +23,9 @@ public struct Text: View, Equatable {
 
     public init(_ content: String) { self.content = .verbatim(content) }
     public init(verbatim content: String) { self.content = .verbatim(content) }
+    public init(_ attributedString: AttributedString) {
+        self.content = .verbatim(String(attributedString.characters))
+    }
 
     public var body: Never { fatalError("Text is a leaf view") }
 
@@ -44,6 +47,10 @@ public struct Text: View, Equatable {
 
     public func bold() -> Text {
         var copy = self; copy.isBold = true; return copy
+    }
+
+    public func lineSpacing(_ lineSpacing: CGFloat) -> Text {
+        self
     }
 
     public func italic() -> Text {

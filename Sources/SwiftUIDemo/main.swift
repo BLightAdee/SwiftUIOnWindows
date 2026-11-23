@@ -2,6 +2,7 @@
 // SwiftUIOnWindows - A SwiftUI compatibility layer for Windows
 // This demonstrates SwiftUI code running natively on Windows.
 
+import Foundation
 import SwiftUIOnWindows
 #if canImport(WinSDK)
 import WinSDK

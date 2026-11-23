@@ -12,7 +12,32 @@ public struct List<Content: View>: View {
         self.content = content()
     }
 
+    public init<SelectionValue: Hashable>(selection: Binding<SelectionValue?>?, @ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
     public var body: Never { fatalError("List uses custom layout") }
+}
+
+// MARK: - ListStyle
+
+public protocol ListStyle {}
+public struct SidebarListStyle: ListStyle, Sendable { public init() {} }
+public struct InsetListStyle: ListStyle, Sendable { public init() {} }
+public struct PlainListStyle: ListStyle, Sendable { public init() {} }
+
+extension ListStyle where Self == SidebarListStyle {
+    public static var sidebar: SidebarListStyle { SidebarListStyle() }
+}
+extension ListStyle where Self == InsetListStyle {
+    public static var inset: InsetListStyle { InsetListStyle() }
+}
+extension ListStyle where Self == PlainListStyle {
+    public static var plain: PlainListStyle { PlainListStyle() }
+}
+
+public extension View {
+    func listStyle<S: ListStyle>(_ style: S) -> some View { self }
 }
 
 // MARK: - ForEach
@@ -42,10 +67,16 @@ extension ForEach where Data: Identifiable, ID == Data.ID {
     }
 }
 
-extension ForEach where Data == Range<Int>, ID == Int {
-    public init(_ data: Range<Int>, @ViewBuilder content: @escaping (Int) -> Content) {
+extension ForEach where Data == Int, ID == Int {
+    public init(_ data: Range<Int>, id: KeyPath<Int, Int> = \.self, @ViewBuilder content: @escaping (Int) -> Content) {
         self.data = Array(data)
-        self.id = \.self
+        self.id = id
+        self.content = content
+    }
+
+    public init(_ data: ClosedRange<Int>, id: KeyPath<Int, Int> = \.self, @ViewBuilder content: @escaping (Int) -> Content) {
+        self.data = Array(data)
+        self.id = id
         self.content = content
     }
 }
@@ -59,6 +90,22 @@ public struct Section<Parent: View, Content: View, Footer: View>: View {
     internal let content: Content
 
     public var body: Never { fatalError("Section uses custom layout") }
+}
+
+extension Section where Footer == EmptyView {
+    public init(header: Parent, @ViewBuilder content: () -> Content) {
+        self.header = header
+        self.footer = nil
+        self.content = content()
+    }
+}
+
+extension Section {
+    public init(header: Parent, footer: Footer, @ViewBuilder content: () -> Content) {
+        self.header = header
+        self.footer = footer
+        self.content = content()
+    }
 }
 
 extension Section where Parent == Text, Footer == EmptyView {

@@ -235,14 +235,73 @@ extension View {
         ModifiedContent(content: self, modifier: LineLimitModifier(limit: number))
     }
 
+    public func lineSpacing(_ lineSpacing: CGFloat) -> some View {
+        self
+    }
+
     // MARK: - Minimum Scale Factor
 
     public func minimumScaleFactor(_ factor: CGFloat) -> some View {
         ModifiedContent(content: self, modifier: MinimumScaleFactorModifier(factor: factor))
     }
+
+    // MARK: - Identifiers & State Observers
+
+    public func id<ID: Hashable>(_ id: ID) -> some View {
+        self
+    }
+
+    public func onChange<V: Equatable>(of value: V, perform action: @escaping (V) -> Void) -> some View {
+        self
+    }
+
+    public func onChange<V: Equatable>(of value: V, initial: Bool = false, _ action: @escaping (_ oldValue: V, _ newValue: V) -> Void) -> some View {
+        self
+    }
+
+    public func animation(_ animation: Animation?, value: some Equatable) -> some View {
+        self
+    }
+
+    public func listStyle<S>(_ style: S) -> some View {
+        self
+    }
+
+    public func allowsHitTesting(_ enabled: Bool) -> some View {
+        self
+    }
+
+    public func onHover(perform action: @escaping (Bool) -> Void) -> some View {
+        self
+    }
+
+    public func help(_ text: String) -> some View {
+        self
+    }
+
+    public func controlSize(_ size: ControlSize) -> some View {
+        self
+    }
+
+    public func task(priority: TaskPriority = .userInitiated, _ action: @escaping () async -> Void) -> some View {
+        self
+    }
+
+    public func task<T: Equatable>(id value: T, priority: TaskPriority = .userInitiated, _ action: @escaping () async -> Void) -> some View {
+        self
+    }
+
+    public func tint(_ color: Color?) -> some View {
+        self
+    }
+
+    public func labelsHidden() -> some View {
+        self
+    }
 }
 
 public enum ContentMode: Sendable { case fit, fill }
+public enum ControlSize: Sendable { case mini, small, regular, large, extraLarge }
 
 // MARK: - Modifier Implementations
 

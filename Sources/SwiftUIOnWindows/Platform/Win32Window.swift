@@ -11,7 +11,7 @@ public final class Win32Window: @unchecked Sendable {
     public static var mainWindowHandle: HWND? = nil
 
     /// Custom message ID for SwiftUI state updates.
-    public static let WM_SWIFTUI_UPDATE: UINT = WM_USER + 100
+    public static let WM_SWIFTUI_UPDATE: UINT = UINT(WM_USER + 100)
 
     private var hwnd: HWND?
     private var className: String
@@ -54,8 +54,8 @@ public final class Win32Window: @unchecked Sendable {
             wc.cbClsExtra = 0
             wc.cbWndExtra = 0
             wc.hInstance = GetModuleHandleW(nil)
-            wc.hIcon = LoadIconW(nil, IDI_APPLICATION)
-            wc.hCursor = LoadCursorW(nil, IDC_ARROW)
+            wc.hIcon = LoadIconW(nil, UnsafePointer<WCHAR>(bitPattern: 32512))
+            wc.hCursor = LoadCursorW(nil, UnsafePointer<WCHAR>(bitPattern: 32512))
             wc.hbrBackground = nil  // We handle painting ourselves
             wc.lpszMenuName = nil
             wc.lpszClassName = classNamePtr

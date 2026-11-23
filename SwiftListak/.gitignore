@@ -1,0 +1,9 @@
+.build/
+.swiftpm/
+bin/
+*.exe
+*.dll
+*.pdb
+*.o
+.DS_Store
+Thumbs.db

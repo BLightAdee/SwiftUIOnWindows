@@ -1,5 +1,6 @@
 .build/
 .swiftpm/
+bin/
 *.o
 *.exe
 *.dll

@@ -3,16 +3,29 @@
 
 import Foundation
 
+public struct ButtonRole: Equatable, Sendable {
+    public init() {}
+    public static let destructive = ButtonRole()
+    public static let cancel = ButtonRole()
+}
+
 public struct Button<Label: View>: View {
     public typealias Body = Never
 
     internal let action: () -> Void
     internal let label: Label
-    internal var buttonStyle: AnyButtonStyle = .default
+    internal let role: ButtonRole?
 
     public init(action: @escaping () -> Void, @ViewBuilder label: () -> Label) {
         self.action = action
         self.label = label()
+        self.role = nil
+    }
+
+    public init(role: ButtonRole?, action: @escaping () -> Void, @ViewBuilder label: () -> Label) {
+        self.action = action
+        self.label = label()
+        self.role = role
     }
 
     public var body: Never { fatalError("Button is a leaf view") }
@@ -22,6 +35,13 @@ extension Button where Label == Text {
     public init(_ title: String, action: @escaping () -> Void) {
         self.action = action
         self.label = Text(title)
+        self.role = nil
+    }
+
+    public init(_ title: String, role: ButtonRole?, action: @escaping () -> Void) {
+        self.action = action
+        self.label = Text(title)
+        self.role = role
     }
 }
 
@@ -35,6 +55,31 @@ public struct ButtonStyleConfiguration {
     public let isPressed: Bool
 }
 
+public struct PlainButtonStyle: ButtonStyle, Sendable {
+    public init() {}
+    public func makeBody(configuration: ButtonStyleConfiguration) -> some View { configuration.label }
+}
+
+public struct BorderedButtonStyle: ButtonStyle, Sendable {
+    public init() {}
+    public func makeBody(configuration: ButtonStyleConfiguration) -> some View { configuration.label }
+}
+
+public struct BorderedProminentButtonStyle: ButtonStyle, Sendable {
+    public init() {}
+    public func makeBody(configuration: ButtonStyleConfiguration) -> some View { configuration.label }
+}
+
+public struct BorderlessButtonStyle: ButtonStyle, Sendable {
+    public init() {}
+    public func makeBody(configuration: ButtonStyleConfiguration) -> some View { configuration.label }
+}
+
+public struct DefaultButtonStyle: ButtonStyle, Sendable {
+    public init() {}
+    public func makeBody(configuration: ButtonStyleConfiguration) -> some View { configuration.label }
+}
+
 public struct AnyButtonStyle: Sendable {
     internal enum Style: Sendable {
         case `default`, bordered, borderedProminent, borderless, plain
@@ -45,4 +90,26 @@ public struct AnyButtonStyle: Sendable {
     public static let borderedProminent = AnyButtonStyle(style: .borderedProminent)
     public static let borderless = AnyButtonStyle(style: .borderless)
     public static let plain = AnyButtonStyle(style: .plain)
+}
+
+extension ButtonStyle where Self == PlainButtonStyle {
+    public static var plain: PlainButtonStyle { PlainButtonStyle() }
+}
+extension ButtonStyle where Self == BorderedButtonStyle {
+    public static var bordered: BorderedButtonStyle { BorderedButtonStyle() }
+}
+extension ButtonStyle where Self == BorderedProminentButtonStyle {
+    public static var borderedProminent: BorderedProminentButtonStyle { BorderedProminentButtonStyle() }
+}
+extension ButtonStyle where Self == BorderlessButtonStyle {
+    public static var borderless: BorderlessButtonStyle { BorderlessButtonStyle() }
+}
+extension ButtonStyle where Self == DefaultButtonStyle {
+    public static var automatic: DefaultButtonStyle { DefaultButtonStyle() }
+}
+
+public extension View {
+    func buttonStyle<S: ButtonStyle>(_ style: S) -> some View {
+        self
+    }
 }

@@ -29,7 +29,8 @@ public struct AnyShape: Shape {
 
 // MARK: - Path
 
-public struct Path: Sendable {
+public struct Path: Sendable, Shape {
+    public func path(in rect: CGRect) -> Path { self }
     internal enum Element: Sendable {
         case moveTo(CGPoint)
         case lineTo(CGPoint)
@@ -124,6 +125,28 @@ public struct Capsule: Shape {
 
 // MARK: - Shape Modifiers
 
+public enum CGLineCap: Int32, Sendable { case butt, round, square }
+public enum CGLineJoin: Int32, Sendable { case miter, round, bevel }
+
+public struct StrokeStyle: Sendable {
+    public var lineWidth: CGFloat
+    public var lineCap: CGLineCap
+    public var lineJoin: CGLineJoin
+    public var miterLimit: CGFloat
+    public var dash: [CGFloat]
+    public var dashPhase: CGFloat
+
+    public init(lineWidth: CGFloat = 1, lineCap: CGLineCap = .butt, lineJoin: CGLineJoin = .miter,
+                miterLimit: CGFloat = 10, dash: [CGFloat] = [], dashPhase: CGFloat = 0) {
+        self.lineWidth = lineWidth
+        self.lineCap = lineCap
+        self.lineJoin = lineJoin
+        self.miterLimit = miterLimit
+        self.dash = dash
+        self.dashPhase = dashPhase
+    }
+}
+
 extension Shape {
     public func fill(_ color: Color) -> some View {
         ModifiedContent(content: ShapeView(shape: self),
@@ -133,5 +156,15 @@ extension Shape {
     public func stroke(_ color: Color, lineWidth: CGFloat = 1) -> some View {
         ModifiedContent(content: ShapeView(shape: self),
                         modifier: BorderModifier(color: color, width: lineWidth))
+    }
+
+    public func stroke(style: StrokeStyle) -> some View {
+        ModifiedContent(content: ShapeView(shape: self),
+                        modifier: BorderModifier(color: .primary, width: style.lineWidth))
+    }
+
+    public func stroke(_ color: Color, style: StrokeStyle) -> some View {
+        ModifiedContent(content: ShapeView(shape: self),
+                        modifier: BorderModifier(color: color, width: style.lineWidth))
     }
 }
