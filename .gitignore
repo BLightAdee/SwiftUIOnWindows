@@ -1,0 +1,15 @@
+.build/
+.swiftpm/
+*.o
+*.exe
+*.dll
+*.pdb
+*.exp
+*.lib
+DerivedData/
+xcuserdata/
+*.xcworkspace
+Packages/
+Package.resolved
+.DS_Store
+Thumbs.db
