@@ -3,7 +3,7 @@
 
 import Foundation
 
-public struct ScrollView<Content: View>: View {
+public struct ScrollView<Content: View>: View, _RenderableInternal, _ChildrenProvider {
     public typealias Body = Never
 
     internal let axes: Axis.Set
@@ -19,4 +19,21 @@ public struct ScrollView<Content: View>: View {
     }
 
     public var body: Never { fatalError("ScrollView uses custom layout") }
+
+    public func _getChildren() -> [any View] {
+        if let provider = content as? _ChildrenProvider {
+            return provider._getChildren()
+        }
+        return [content]
+    }
+
+    public func _render(in context: inout RenderContext) {
+        context.render(content)
+    }
+}
+
+extension ScrollView: _LayoutSizableInternal {
+    public func _layout(proposed: ProposedSize) -> CGSize {
+        return LayoutEngine.layoutAny(content, proposed: proposed)
+    }
 }

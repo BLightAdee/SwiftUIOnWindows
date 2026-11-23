@@ -62,3 +62,9 @@ extension Color: View {
 }
 
 public enum ColorScheme: Sendable { case light, dark }
+
+extension Color: _LayoutSizableInternal {
+    public func _layout(proposed: ProposedSize) -> CGSize {
+        return CGSize(width: proposed.width ?? 100, height: proposed.height ?? 100)
+    }
+}

@@ -9,7 +9,7 @@ public struct ButtonRole: Equatable, Sendable {
     public static let cancel = ButtonRole()
 }
 
-public struct Button<Label: View>: View {
+public struct Button<Label: View>: View, _RenderableInternal, _LayoutSizableInternal {
     public typealias Body = Never
 
     internal let action: () -> Void
@@ -29,6 +29,43 @@ public struct Button<Label: View>: View {
     }
 
     public var body: Never { fatalError("Button is a leaf view") }
+
+    public func _layout(proposed: ProposedSize) -> CGSize {
+        let proposedInner = ProposedSize(width: proposed.width.map { max(0, $0 - 24) }, height: proposed.height.map { max(0, $0 - 12) })
+        let labelSize = LayoutEngine.layoutAny(label, proposed: proposedInner)
+        return CGSize(width: labelSize.width + 24, height: max(28, labelSize.height + 12))
+    }
+
+    public func _render(in context: inout RenderContext) {
+        let rect = CGRect(origin: context.origin, size: context.size)
+        let cornerRadius: CGFloat = 6
+
+        let bgColor: Color
+        if role == .destructive {
+            bgColor = Color.red.opacity(0.15)
+        } else {
+            bgColor = Color(red: 0.88, green: 0.88, blue: 0.90)
+        }
+
+        RenderTreeBuilder.shared.appendNode(.rect(bgColor, rect, cornerRadius))
+        RenderTreeBuilder.shared.appendNode(.border(Color.gray.opacity(0.4), rect, cornerRadius, 1))
+
+        RenderTreeBuilder.shared.registerClickTarget(rect: rect, action: action)
+
+        let proposed = ProposedSize(width: max(0, context.size.width - 16), height: max(0, context.size.height - 8))
+        let labelSize = LayoutEngine.layout(label, proposed: proposed)
+        let labelX = (context.size.width - labelSize.width) / 2
+        let labelY = (context.size.height - labelSize.height) / 2
+
+        var labelCtx = context.child(
+            offset: CGPoint(x: labelX, y: labelY),
+            size: labelSize
+        )
+        if labelCtx.foregroundColor == .primary {
+            labelCtx.foregroundColor = (role == .destructive) ? .red : .blue
+        }
+        labelCtx.render(label)
+    }
 }
 
 extension Button where Label == Text {

@@ -12,8 +12,29 @@ public final class StateManager: @unchecked Sendable {
 
     private var updateScheduled = false
     private var renderCallback: (() -> Void)?
+    private var storageMap: [String: AnyObject] = [:]
+    private var occurrenceInFrame: [String: Int] = [:]
 
     private init() {}
+
+    /// Called at the start of each render frame to reset traversal indices.
+    public func beginFrame() {
+        occurrenceInFrame.removeAll()
+    }
+
+    /// Retrieve or create persistent storage for a @State property.
+    public func getOrCreateStorage<Storage: AnyObject>(forKey key: String, factory: () -> Storage) -> Storage {
+        let index = occurrenceInFrame[key, default: 0]
+        occurrenceInFrame[key] = index + 1
+        let fullKey = "\(key)#\(index)"
+
+        if let existing = storageMap[fullKey] as? Storage {
+            return existing
+        }
+        let created = factory()
+        storageMap[fullKey] = created
+        return created
+    }
 
     /// Register the render callback (called by the platform window).
     public func setRenderCallback(_ callback: @escaping () -> Void) {

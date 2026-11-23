@@ -31,8 +31,15 @@ internal final class StateStorage<Value>: @unchecked Sendable {
 public struct State<Value>: @unchecked Sendable {
     private let storage: StateStorage<Value>
 
-    public init(wrappedValue: Value) {
-        self.storage = StateStorage(wrappedValue)
+    public init(wrappedValue: Value, file: String = #file, line: UInt = #line, column: UInt = #column) {
+        let key = "\(file):\(line):\(column)"
+        self.storage = StateManager.shared.getOrCreateStorage(forKey: key) {
+            StateStorage(wrappedValue)
+        }
+    }
+
+    public init(initialValue: Value, file: String = #file, line: UInt = #line, column: UInt = #column) {
+        self.init(wrappedValue: initialValue, file: file, line: line, column: column)
     }
 
     public var wrappedValue: Value {

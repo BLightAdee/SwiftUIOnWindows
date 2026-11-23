@@ -88,3 +88,9 @@ public struct Text: View, Equatable {
 
 public enum TextAlignment: Sendable { case leading, center, trailing }
 public enum TruncationMode: Sendable { case head, tail, middle }
+
+extension Text: _LayoutSizableInternal {
+    public func _layout(proposed: ProposedSize) -> CGSize {
+        return LayoutEngine.layoutText(self, proposed: proposed)
+    }
+}

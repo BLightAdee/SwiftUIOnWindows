@@ -18,7 +18,7 @@ public struct _ViewModifierContent: View {
 
 // MARK: - ModifiedContent
 
-public struct ModifiedContent<Content: View, Modifier: ViewModifier>: View {
+public struct ModifiedContent<Content: View, Modifier: ViewModifier>: View, _RenderableInternal, _LayoutSizableInternal {
     public typealias Body = Never
     public let content: Content
     public let modifier: Modifier
@@ -29,6 +29,136 @@ public struct ModifiedContent<Content: View, Modifier: ViewModifier>: View {
     }
 
     public var body: Never { fatalError("ModifiedContent uses custom rendering") }
+
+    public func _layout(proposed: ProposedSize) -> CGSize {
+        if let pad = modifier as? PaddingModifier {
+            let insets = pad.insets
+            let innerProp = ProposedSize(
+                width: proposed.width.map { max(0, $0 - insets.leading - insets.trailing) },
+                height: proposed.height.map { max(0, $0 - insets.top - insets.bottom) }
+            )
+            let innerSize = LayoutEngine.layoutAny(content, proposed: innerProp)
+            return CGSize(
+                width: innerSize.width + insets.leading + insets.trailing,
+                height: innerSize.height + insets.top + insets.bottom
+            )
+        }
+        if let frame = modifier as? FrameModifier {
+            let innerSize = LayoutEngine.layoutAny(content, proposed: proposed)
+            return CGSize(width: frame.width ?? innerSize.width, height: frame.height ?? innerSize.height)
+        }
+        if let flex = modifier as? FlexibleFrameModifier {
+            var innerSize = LayoutEngine.layoutAny(content, proposed: proposed)
+            if let maxW = flex.maxWidth { innerSize.width = min(innerSize.width, maxW) }
+            if let minW = flex.minWidth { innerSize.width = max(innerSize.width, minW) }
+            if let maxH = flex.maxHeight { innerSize.height = min(innerSize.height, maxH) }
+            if let minH = flex.minHeight { innerSize.height = max(innerSize.height, minH) }
+            return innerSize
+        }
+        return LayoutEngine.layoutAny(content, proposed: proposed)
+    }
+
+    public func _render(in context: inout RenderContext) {
+        // 1. PaddingModifier
+        if let pad = modifier as? PaddingModifier {
+            let insets = pad.insets
+            let newWidth = max(0, context.size.width - insets.leading - insets.trailing)
+            let newHeight = max(0, context.size.height - insets.top - insets.bottom)
+            var childCtx = context.child(
+                offset: CGPoint(x: insets.leading, y: insets.top),
+                size: CGSize(width: newWidth, height: newHeight)
+            )
+            childCtx.render(content)
+            return
+        }
+
+        // 2. CornerRadiusModifier
+        if let cr = modifier as? CornerRadiusModifier {
+            var childCtx = context
+            childCtx.cornerRadius = cr.radius
+            childCtx.render(content)
+            return
+        }
+
+        // 3. BackgroundModifier
+        if let bg = modifier as? BackgroundModifier {
+            var bgCtx = context
+            bgCtx.render(bg.background)
+            var contentCtx = context
+            contentCtx.render(content)
+            return
+        }
+
+        // 4. ForegroundColorModifier
+        if let fg = modifier as? ForegroundColorModifier {
+            var childCtx = context
+            if let c = fg.color { childCtx.foregroundColor = c }
+            childCtx.render(content)
+            return
+        }
+
+        // 5. FontModifier
+        if let fm = modifier as? FontModifier {
+            var childCtx = context
+            if let f = fm.font { childCtx.font = f }
+            childCtx.render(content)
+            return
+        }
+
+        // 6. OpacityModifier
+        if let op = modifier as? OpacityModifier {
+            var childCtx = context
+            childCtx.opacity *= op.opacity
+            childCtx.render(content)
+            return
+        }
+
+        // 7. FrameModifier
+        if let frame = modifier as? FrameModifier {
+            let w = frame.width ?? context.size.width
+            let h = frame.height ?? context.size.height
+            var childCtx = context
+            childCtx.size = CGSize(width: w, height: h)
+            childCtx.render(content)
+            return
+        }
+
+        // 8. FlexibleFrameModifier
+        if let flex = modifier as? FlexibleFrameModifier {
+            var w = context.size.width
+            var h = context.size.height
+            if let maxW = flex.maxWidth { w = min(w, maxW) }
+            if let minW = flex.minWidth { w = max(w, minW) }
+            if let maxH = flex.maxHeight { h = min(h, maxH) }
+            if let minH = flex.minHeight { h = max(h, minH) }
+            var childCtx = context
+            childCtx.size = CGSize(width: w, height: h)
+            childCtx.render(content)
+            return
+        }
+
+        // 9. BorderModifier
+        if let border = modifier as? BorderModifier {
+            let rect = CGRect(origin: context.origin, size: context.size)
+            RenderTreeBuilder.shared.appendNode(.border(border.color, rect, context.cornerRadius, border.width))
+            var childCtx = context
+            childCtx.render(content)
+            return
+        }
+
+        // 10. OverlayModifier
+        if let overlay = modifier as? OverlayModifier {
+            var contentCtx = context
+            contentCtx.render(content)
+            var overlayCtx = context
+            overlayCtx.render(overlay.overlay)
+            return
+        }
+
+        // Default: render child content
+        var childCtx = context
+        childCtx.render(content)
+    }
 }
 
 // MARK: - Core View Extension Modifiers

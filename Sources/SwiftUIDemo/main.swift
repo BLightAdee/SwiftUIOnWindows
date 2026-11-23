@@ -174,6 +174,60 @@ struct SwiftUIOnWindowsApp: App {
 // ============================================================================
 
 #if canImport(WinSDK)
+
+if CommandLine.arguments.contains("--test") || CommandLine.arguments.contains("--dump-tree") {
+    print("=== SwiftUIOnWindows Test Mode ===")
+    let builder = RenderTreeBuilder.shared
+    builder.beginFrame()
+    var context = RenderContext(size: CGSize(width: 960, height: 700))
+    context.render(ContentView())
+    let nodes = builder.endFrame()
+    print("Initial render generated \(nodes.count) nodes.")
+
+    for (i, node) in nodes.enumerated() {
+        switch node {
+        case .text(let str, let font, _, let rect):
+            print("  Node [\(i)]: Text('\(str.replacingOccurrences(of: "\n", with: " "))') at \(rect) font=\(font.size)")
+        case .rect(_, let rect, let cr):
+            print("  Node [\(i)]: Rect(cornerRadius: \(cr)) at \(rect)")
+        case .border(_, let rect, let cr, let w):
+            print("  Node [\(i)]: Border(width: \(w), cornerRadius: \(cr)) at \(rect)")
+        case .group(let children):
+            print("  Node [\(i)]: Group with \(children.count) children")
+        case .empty:
+            print("  Node [\(i)]: Empty")
+        }
+    }
+
+    // Find the "+ Increment" button and click it
+    var clickPoint: CGPoint?
+    for node in nodes {
+        if case .text(let str, _, _, let rect) = node, str.contains("+ Increment") {
+            clickPoint = CGPoint(x: rect.midX, y: rect.midY)
+            break
+        }
+    }
+
+    if let pt = clickPoint {
+        print("\nSimulating button click at \(pt)...")
+        builder.handleClick(at: pt)
+
+        builder.beginFrame()
+        var context2 = RenderContext(size: CGSize(width: 960, height: 700))
+        context2.render(ContentView())
+        let nodes2 = builder.endFrame()
+        print("Second frame generated \(nodes2.count) nodes.")
+        for node in nodes2 {
+            if case .text(let str, _, _, _) = node, str.contains("Counter:") {
+                print(">>> VERIFIED STATE UPDATE: '\(str)' <<<")
+            }
+        }
+    }
+
+    print("=== Test Complete ===")
+    exit(0)
+}
+
 // On Windows: Create the Win32 window and run the app
 
 let appTitle = "SwiftUI on Windows — Demo"
@@ -194,6 +248,7 @@ window.setRenderCallback { hdc, rect in
     context.render(ContentView())
 
     let nodes = builder.endFrame()
+    print("SwiftUIOnWindows: Rendered frame with \(nodes.count) nodes")
     renderer.render(nodes: nodes, to: hdc, in: rect)
 }
 
@@ -202,6 +257,11 @@ StateManager.shared.setRenderCallback {
     if let hwnd = Win32Window.mainWindowHandle {
         InvalidateRect(hwnd, nil, true)
     }
+}
+
+// Set up click handling
+window.setClickCallback { x, y in
+    RenderTreeBuilder.shared.handleClick(at: CGPoint(x: Double(x), y: Double(y)))
 }
 
 // Create and show the window

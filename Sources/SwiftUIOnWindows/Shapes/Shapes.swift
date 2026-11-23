@@ -13,10 +13,26 @@ extension Shape {
     public var body: some View { ShapeView(shape: self) }
 }
 
-internal struct ShapeView<S: Shape>: View {
+internal struct ShapeView<S: Shape>: View, _RenderableInternal, _LayoutSizableInternal {
     public typealias Body = Never
     let shape: S
     public var body: Never { fatalError("ShapeView uses custom rendering") }
+
+    public func _layout(proposed: ProposedSize) -> CGSize {
+        return CGSize(width: proposed.width ?? 100, height: proposed.height ?? 100)
+    }
+
+    public func _render(in context: inout RenderContext) {
+        let rect = CGRect(origin: context.origin, size: context.size)
+        if let rr = shape as? RoundedRectangle {
+            RenderTreeBuilder.shared.appendNode(.rect(context.foregroundColor, rect, rr.cornerRadius))
+        } else if shape is Circle || shape is Ellipse || shape is Capsule {
+            let radius = min(rect.size.width, rect.size.height) / 2
+            RenderTreeBuilder.shared.appendNode(.rect(context.foregroundColor, rect, radius))
+        } else {
+            RenderTreeBuilder.shared.appendNode(.rect(context.foregroundColor, rect, context.cornerRadius))
+        }
+    }
 }
 
 // MARK: - AnyShape

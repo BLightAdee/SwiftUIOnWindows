@@ -7,46 +7,73 @@ import Foundation
 public enum LayoutEngine {
     /// Compute the ideal size of a view given a proposed size from its parent.
     public static func layout<V: View>(_ view: V, proposed: ProposedSize) -> CGSize {
-        let proposedWidth = proposed.width ?? 300
-        let proposedHeight = proposed.height ?? 200
+        // 1. Check if view conforms to internal sizing protocol
+        if let sizable = view as? _LayoutSizableInternal {
+            return sizable._layout(proposed: proposed)
+        }
 
-        // Dispatch based on view type
+        // 2. Text
         if let text = view as? Text {
             return layoutText(text, proposed: proposed)
-        } else if view is Spacer {
-            return CGSize(width: proposedWidth, height: proposedHeight)
-        } else if view is Divider {
-            return CGSize(width: proposedWidth, height: 1)
-        } else if view is EmptyView {
+        }
+
+        // 3. Leaf views
+        if view is Spacer {
+            return CGSize(width: proposed.width ?? 0, height: proposed.height ?? 0)
+        }
+        if view is Divider {
+            return CGSize(width: proposed.width ?? 100, height: 1)
+        }
+        if view is EmptyView {
             return .zero
         }
 
-        // Default: use proposed size
+        // 4. Custom views with body
+        if !(V.Body.self == Never.self) {
+            return layout(view.body, proposed: proposed)
+        }
+
+        // 5. Default fallback: use proposed dimensions or reasonable defaults
+        let proposedWidth = proposed.width ?? 300
+        let proposedHeight = proposed.height ?? 200
         return CGSize(width: proposedWidth, height: proposedHeight)
     }
 
+    /// Compute the ideal size of an existential `any View`.
+    public static func layoutAny(_ view: any View, proposed: ProposedSize) -> CGSize {
+        return layout(view, proposed: proposed)
+    }
+
     /// Estimate the size needed for text rendering.
-    private static func layoutText(_ text: Text, proposed: ProposedSize) -> CGSize {
+    public static func layoutText(_ text: Text, proposed: ProposedSize) -> CGSize {
         let font = text.resolvedFont
         let str = text.resolvedText
         // Approximate character metrics based on font size
         let charWidth = font.size * 0.6
-        let lineHeight = font.size * 1.2
+        let lineHeight = font.size * 1.3
 
         let maxWidth = proposed.width ?? 10000
-        let textWidth = CGFloat(str.count) * charWidth
+        let lines = str.components(separatedBy: "\n")
+        var computedMaxWidth: CGFloat = 0
+        var totalLines = 0
 
-        if textWidth <= maxWidth {
-            return CGSize(width: textWidth, height: lineHeight)
-        } else {
-            let lines = Int(ceil(textWidth / maxWidth))
-            let actualLines: Int
-            if let limit = text.lineLimit {
-                actualLines = min(lines, limit)
+        for line in lines {
+            let lineTextWidth = CGFloat(line.count) * charWidth
+            if lineTextWidth <= maxWidth {
+                computedMaxWidth = max(computedMaxWidth, lineTextWidth)
+                totalLines += 1
             } else {
-                actualLines = lines
+                let wrapped = Int(ceil(lineTextWidth / maxWidth))
+                computedMaxWidth = maxWidth
+                totalLines += max(1, wrapped)
             }
-            return CGSize(width: maxWidth, height: CGFloat(actualLines) * lineHeight)
         }
+
+        if let limit = text.lineLimit {
+            totalLines = min(totalLines, limit)
+        }
+
+        let computedHeight = max(lineHeight, CGFloat(totalLines) * lineHeight)
+        return CGSize(width: max(charWidth, computedMaxWidth), height: computedHeight)
     }
 }

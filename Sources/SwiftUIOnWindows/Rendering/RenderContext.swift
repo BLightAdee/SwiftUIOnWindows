@@ -10,16 +10,18 @@ public struct RenderContext {
     public var foregroundColor: Color
     public var font: Font
     public var opacity: Double
+    public var cornerRadius: CGFloat
     public var clipRect: CGRect?
 
     public init(origin: CGPoint = .zero, size: CGSize,
                 foregroundColor: Color = .primary, font: Font = .body,
-                opacity: Double = 1.0) {
+                opacity: Double = 1.0, cornerRadius: CGFloat = 0) {
         self.origin = origin
         self.size = size
         self.foregroundColor = foregroundColor
         self.font = font
         self.opacity = opacity
+        self.cornerRadius = cornerRadius
     }
 
     /// Push a child context with offset origin.
@@ -33,5 +35,10 @@ public struct RenderContext {
     /// Render a view using the platform backend.
     public mutating func render<V: View>(_ view: V) {
         RenderTreeBuilder.shared.renderView(view, in: &self)
+    }
+
+    /// Render an existential view.
+    public mutating func renderAny(_ view: any View) {
+        RenderTreeBuilder.shared.renderAnyView(view, in: &self)
     }
 }
